@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <title>Avions</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="container"  onload="initMap()">
+    <div id="map">
+	</div>
+
+    <div id="input">
+        <!-- Lat : <input type="number" id="latitude" value="45.833619"><br/>
+        Lon : <input type="number" id="longitude" value="1.261105">&nbsp; -->
+        <button onclick="afficher()" class="btn btn-success">Valider</button>
+    </div>
+    <div class="donnees">
+    </div>
+    
+    <script>
+        let lat, lon;
+        var macarte = null;
+        var marker01, marker02;
+        var north, south, west, east;
+        var listmarker = [];
+        var myIcon = L.icon({
+            iconUrl: 'avion.png',
+            iconSize: [30, 30],
+            iconAnchor: [22, 80],
+            popupAnchor: [-3, -76],
+        });
+
+        function initMap() {
+            // Créer l'objet "macarte" et l'insèrer dans l'élément HTML qui a l'ID "map"
+            lat = parseFloat($("#latitude").val());
+            lon = parseFloat($("#longitude").val());
+            console.log("lat "+lat);
+            macarte = L.map('map').setView([45, 1.0], 5);
+            // Leaflet ne récupère pas les cartes (tiles) sur un serveur par défaut. Nous devons lui préciser où nous souhaitons les récupérer. Ici, openstreetmap.fr
+            L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+                // Il est toujours bien de laisser le lien vers la source des données
+                attribution: 'données © <a href="//osm.org/copyright">OpenStreetMap</a>/ODbL - rendu <a href="//openstreetmap.fr">OSM France</a>',
+                minZoom: 1,
+                maxZoom: 20
+            }).addTo(macarte);
+        }
+
+        function afficher(){
+            lat = parseFloat($("#latitude").val());
+            lon = parseFloat($("#longitude").val()); 
+            north = macarte.getBounds().getNorth();
+            south = macarte.getBounds().getSouth();
+            west = macarte.getBounds().getWest();
+            east = macarte.getBounds().getEast();
+
+            var url;
+
+            url = 'https://opensky-network.org/api/states/all?lamin='+ south +'&lomin='+ west +'&lamax='+ north +'&lomax='+ east;
+
+            console.log(url);
+            console.log("Envois de la requête");
+            fetch(url)
+            .then(data => data.json())
+            .then((json) => {
+                console.log("requête traitée");
+                // console.log(json);
+                // console.log(json.states);
+                if(json.states == null){
+                    alert("Il n'y a pas d'avions dans la zone sélectionnée");
+                }
+                else json.states.forEach((element)=>{
+                    // console.log(element[5]); 
+                    // console.log(element[6]);
+                    marker02 = L.marker([element[6], element[5]], {icon: myIcon}).bindPopup(element[1]).addTo(macarte).openPopup();
+                    console.log("Affichage des marqueurs");
+                    $(".donnees").show();
+                });
+            })
+        }
+    </script>
+</body>
+</html>
